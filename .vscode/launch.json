@@ -1,0 +1,16 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+    
+        {
+            "name": "Python: Current File (Integrated Terminal)",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "cwd": "${workspaceRoot}//AVL_Automation",
+            "env": {"PYTHONPATH": "${workspaceRoot}"},
+            "console": "integratedTerminal"
+        }
+    ]
+}

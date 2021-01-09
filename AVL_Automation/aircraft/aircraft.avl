@@ -1,0 +1,48 @@
+aircraft
+#Mach
+0.4
+#iYsym iZsym Zsym
+0 0 0.0
+#Sref Cref Bref
+18.0 1.6449704142011834 12
+#Xref Yref Zref
+1.307169334051717 2.461538461538462 0.17212753709171794
+0.0
+SURFACE
+wing
+#NChordwise ChordSpacing NSpanwise SpanSpacing
+12 1 20 1
+YDUPLICATE
+0.0
+SECTION
+#Xle Yle Zle Chord Angle
+0 0 0 2.3076923076923075 0
+NACA
+2414
+SECTION
+#Xle Yle Zle Chord Angle
+2.183821405597214 6.0 0.4195608716610625 0.6923076923076922 0
+NACA
+2410
+SURFACE
+horizontal_tail
+#NChordwise ChordSpacing NSpanwise SpanSpacing
+12 1 20 1
+YDUPLICATE
+0.0
+SECTION
+#Xle Yle Zle Chord Angle
+8 0 0.5 1.7142857142857142 0
+NACA
+0012
+CONTROL
+#Name Gain XHinge Vector SgnDup
+elevator 1.0 0.6 0 0 0 1
+SECTION
+#Xle Yle Zle Chord Angle
+9.11307171327134 2.5 0.7627605881641912 0.6857142857142857 0
+NACA
+0012
+CONTROL
+#Name Gain XHinge Vector SgnDup
+elevator 1.0 0.6 0 0 0 1
