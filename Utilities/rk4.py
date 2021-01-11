@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def rk4(xdot, tspan, x0):
+def rk4(xdot, tspan, x0, print_timestamp):
     """
     Runge-Kutta 4th Order Solver
 
@@ -20,8 +20,9 @@ def rk4(xdot, tspan, x0):
 
     # Allocate space
     x = np.zeros((len(x0),len(tspan)))
-    x[:,0] = x0[:,0]
+    x[:,[0]] = x0[:,[0]]
 
+    print("Starting Simulation")
     for ii in range(0,len(tspan)-1):
         dt = tspan[ii+1]-tspan[ii]
         
@@ -41,7 +42,12 @@ def rk4(xdot, tspan, x0):
         # Solve for the next time step
         
         x[:,[ii+1]] = x[:,[ii]] + (k1[:,[0]] + 2*k2[:,[0]] + 2*k3[:,[0]] + k4[:,[0]])/6
-    
+
+        if print_timestamp == True:
+            print('\rRunning t = {:1.5f} (s)'.format(tspan[ii]), end='', flush=True)
+
+
+    print("Simulation Complete")
     return x
 
 

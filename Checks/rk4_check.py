@@ -19,13 +19,13 @@ def duffing(t, x):
     d = 0.22
     ff = 0.3
 
-    xdot = np.array([[x[1]], [ff*np.cos(w*t)-d*x[1]+b*x[0]-a*(x[0])**3]])
+    xdot = np.array([x[1], ff*np.cos(w*t)-d*x[1]+b*x[0]-a*(x[0])**3])
 
     return xdot
 
 t = time.time()
 
-x = rk4(duffing, tspan, x0)
+x = rk4(duffing, tspan, x0, print_timestamp=True)
 
 elapsed = time.time() - t
 
@@ -39,5 +39,5 @@ plt.figure()
 plt.plot(tspan,x[0,:])
 plt.show()
 
-import cProfile
-cProfile.run('rk4(duffing, tspan, x0)')
+# import cProfile
+# cProfile.run('rk4(duffing, tspan, x0)')

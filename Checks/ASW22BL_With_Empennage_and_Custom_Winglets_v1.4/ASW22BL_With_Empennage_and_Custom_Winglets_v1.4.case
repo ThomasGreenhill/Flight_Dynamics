@@ -1,16 +1,19 @@
  ---------------------------------------------
  Run case 1 :  Get_Current_Coefficients
 
- alpha        -> alpha        = [0.]
- beta         -> beta         = [0.]
+ alpha        -> alpha        = 4.0
+ beta         -> beta         = 0.0
  pb/2V        -> pb/2V        = 0.0
  qc/2V        -> qc/2V        = 0.0
  rb/2V        -> rb/2V        = 0.0
- aileron      -> d1           = [0]
- flaps        -> d2           = 0
- winglet      -> d3           = 0
- elevator     -> d4           = [10]
- rudder       -> d5           = [0]
+ p            -> pb/2V        = [0.]
+ q            -> qc/2V        = 0.0
+ r            -> rb/2V        = [0.]
+ d1           -> d1           = [0]
+ d2           -> d2           = 0
+ d3           -> d3           = 0
+ d4           -> d4           = [10]
+ d5           -> d5           = [0]
 
  alpha      = 0.0        deg
  beta       = 0.0        deg
@@ -23,21 +26,21 @@
  elevation  = 0.0        deg
  heading    = 0.0        deg
  Mach       = 0.12       
- velocity   = 0.0        m/s
- density    = 1.225      kg/m^3
- grav.acc.  = 9.81       m/s^2
+ velocity   = 42.0       m/s
+ density    = 0.002377   kg/m^3
+ grav.acc.  = 32.2       m/s^2
  turn_rad.  = 0.0        m
  load_fac.  = 0.0        
  X_cg       = 0.35512    m
  Y_cg       = 0.0        m
  Z_cg       = 0.0244     m
- mass       = 1.0        kg
- Ixx        = 1.0        kg-m^2
- Iyy        = 1.0        kg-m^2
- Izz        = 1.0        kg-m^2
+ mass       = 1208.8198757763973 kg
+ Ixx        = 25000.0    kg-m^2
+ Iyy        = 122000.0   kg-m^2
+ Izz        = 140000.0   kg-m^2
  Ixy        = 0.0        kg-m^2
  Iyz        = 0.0        kg-m^2
- Izx        = 0.0        kg-m^2
+ Izx        = 975.0      kg-m^2
  visc CL_a  = 0.0        
  visc CL_u  = 0.0        
  visc CM_a  = 0.0        

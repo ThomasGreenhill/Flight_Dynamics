@@ -8,9 +8,13 @@ sys.path.append('../AVL_Automation')
 from pyAvl_Cf_Cm import pyAvl_Cf_Cm
 
 
-x = np.zeros((12, 1))
+# x = np.random.random((12, 1))
+x = np.zeros((12,1))
 x[0] = 42
 x[1] = 4*np.pi/180
+x[2] = 3*np.pi/180
+
+print(x)
 
 # Path to aircraft geometry file for AVL
 acftpath = '/Users/thomasgreenhill/SUAVE/ASW22BL/ASW_22_Demo/Geometry/ASW22BL_Wing_With_Tips_Tail_Surfaces_v1.4.avl'
@@ -45,13 +49,6 @@ def acft_props():
 Ixx, Iyy, Izz, Ixz, cbar, S, bspan, g, m, X_cg = acft_props()
 
 
-pyAvl_Cf_Cm(acftpath, x, controlvec, Ixx, Iyy, Izz, Ixz, m, X_cg, rho, bspan, cbar)
+CX, CY, CZ, Cm, Cn, Cl = pyAvl_Cf_Cm(acftpath, x, controlvec, Ixx, Iyy, Izz, Ixz, m, X_cg, rho, g, bspan, cbar, runfileexport=False)
 
-print("Parameters:")
-print(", ".join(avl.Case.CASE_PARAMETERS.keys()))
-
-print("\nSettings:")
-print(", ".join(avl.Case.VALID_SETTINGS))
-
-print("\nStates:")
-print(", ".join(avl.Case.CASE_STATES.keys()))
+print(CX)

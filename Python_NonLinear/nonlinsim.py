@@ -19,35 +19,42 @@ sys.path.append('../Utilities')
 from rk4 import rk4
 sys.path.append('../AVL_Automation')
 from pyAvl_Cf_Cm import pyAvl_Cf_Cm
+sys.path.append("../Figure_Formatting")
+import formatfigures
+
+# Figure formatting preamble
+returnval = formatfigures.formatfigures()
+colors = returnval[0]
+params = returnval[1]
 
 # Path to aircraft geometry file for AVL
 acftpath = '/Users/thomasgreenhill/SUAVE/ASW22BL/ASW_22_Demo/Geometry/ASW22BL_Wing_With_Tips_Tail_Surfaces_v1.4.avl'
 
 global rho, T, heng
-rho = 0.002377
+rho = 1.225
 # Neglect thrust and engine angular momentum for now 
 T = 0
 heng = 0
 
-global Ixx, Iyy, Izz, Ixz, cbar, S, b, g, m, X_cg
+global Ixx, Iyy, Izz, Ixz, cbar, S, bspan, g, m, X_cg
 
 def acft_props():
-    # Properties for F-4 Phantom (all in IMP units)
-    Ixx = 2.5e4
-    Iyy = 1.22e5
-    Izz = 1.4e5
-    Ixz = 9.75e2
+    # Bogus properties for ASW-22 BL
+    Ixx = 100000
+    Iyy = 200000
+    Izz = 300000
+    Ixz = 0.1
 
-    cbar = 16
-    S = 530
-    bspan = 38.67
-    g = 32.2
-    m = 38924/32.2
-    X_cg = 0.289
+    cbar = 0.659
+    S = 17.36575
+    bspan = 29.35
+    g = 9.81
+    m = 850
+    X_cg = 0.3
 
-    return Ixx, Iyy, Izz, Ixz, cbar, S, b, g, m, X_cg
+    return Ixx, Iyy, Izz, Ixz, cbar, S, bspan, g, m, X_cg
 
-Ixx, Iyy, Izz, Ixz, cbar, S, b, g, m, X_cg = acft_props()
+Ixx, Iyy, Izz, Ixz, cbar, S, bspan, g, m, X_cg = acft_props()
 
 def control(t):
     '''Control input depending on current time
@@ -67,7 +74,13 @@ def control(t):
 
     if t > tstart and t < tend:
         controlvec = np.array([
-            [1],
+            [10],
+            [0],
+            [0]
+        ])
+    else:
+        controlvec = np.array([
+            [0],
             [0],
             [0]
         ])
@@ -92,6 +105,22 @@ def nonlin_eom(t, x):
         ])
     '''
     
+    # Unpack the state variables
+    # print(x)
+    # print('Next \n')
+    Vt = float(x[0])
+    a = float(x[1])
+    b = float(x[2])
+    Phi = float(x[3])
+    The = float(x[4])
+    Psi = float(x[5])
+    p = float(x[6])
+    q = float(x[7])
+    r = float(x[8])
+    xE = float(x[9])
+    yE = float(x[10])
+    h = float(x[11])
+
     qbar = 0.5*rho*Vt**2
 
     controlvec = control(t)
@@ -127,7 +156,7 @@ def nonlin_eom(t, x):
     w = Vt*np.sin(a)*np.cos(b)
 
     # Calculate the body-axis force coefficients with AVL
-    Cx, Cy, Cz, Cl, Cm, Cn = pyAvl_Cf_Cm(controlvec, u, a, b)
+    Cx, Cy, Cz, Cm, Cn, Cl = pyAvl_Cf_Cm(acftpath, x, controlvec, Ixx, Iyy, Izz, Ixz, m, X_cg, rho, g, bspan, cbar, runfileexport=False)
 
     # Compute the state derivatives
 
@@ -139,9 +168,9 @@ def nonlin_eom(t, x):
     adot = (u*wdot - w*udot)/(u**2 + w**2)
     bdot = (Vt*vdot - v*Vtdot)/(Vt**2*np.sqrt(1-(v/Vt)**2))
     
-    pdot = (c1*r + c2*p + c4*heng)*q + qbar*S*b*(c3*Cl + c4*Cn)
+    pdot = (c1*r + c2*p + c4*heng)*q + qbar*S*bspan*(c3*Cl + c4*Cn)
     qdot = (c5*p - c7*heng)*r - c6*(p**2 - r**2) + qbar*S*cbar*c7*Cm
-    rdot = (c8*p - c2*r + c9*heng)*q + qbar*S*b*(c4*Cl + c9*Cn)
+    rdot = (c8*p - c2*r + c9*heng)*q + qbar*S*bspan*(c4*Cl + c9*Cn)
 
     Phidot = p + np.tan(The)*(q*np.sin(Phi) + r*np.cos(Phi))
     Thedot = q*np.cos(Phi) - r*np.sin(Phi)
@@ -152,29 +181,36 @@ def nonlin_eom(t, x):
     hdot = u*np.sin(The) - v*np.cos(The)*np.sin(Phi) - w*np.cos(The)*np.cos(Phi)
 
     xdot = np.array([
-            [Vtdot],
-            [adot],
-            [bdot],
-            [Phidot],
-            [Thedot],
-            [Psidot],
-            [pdot],
-            [qdot],
-            [rdot],
-            [xEdot],
-            [yEdot],
-            [hdot]
+            Vtdot,
+            adot,
+            bdot,
+            Phidot,
+            Thedot,
+            Psidot,
+            pdot,
+            qdot,
+            rdot,
+            xEdot,
+            yEdot,
+            hdot
         ])
 
     return xdot
 
 
 # Initial conditions and time vector
-tspan = np.linspace(0,50,5001)
+tspan = np.linspace(0,30,31)
 x0 = np.zeros((12,1))
+x0[0] = 42
+x0[1] = 4*np.pi/180
 
 # Solve using RK4
-x = rk4(nonlin_eom, tspan, x0)
+x = rk4(nonlin_eom, tspan, x0, print_timestamp=True)
 
-plt.figure()
-plt.plot(tspan,xEdot)
+# Plotting
+labels = ["Total Velocity", "alpha", "beta", "Phi", "Theta", "Psi", "Pitch Rate", "Roll Rate", "Yaw Rate", "x-Earth Axis Location", "y-Earth Axis Location", "Altitude Above Earth"]
+
+plt.figure(figsize=(12, 12))
+plt.plot(tspan[:],np.transpose(x[:,:]), label=labels)
+plt.legend(loc='best')
+plt.show()
