@@ -5,7 +5,7 @@ import time
 
 sys.path.append('../Utilities')
 
-from rk4 import rk4
+from rk2 import rk2
 
 ## Check using duffing's equation
 
@@ -25,7 +25,7 @@ def duffing(t, x):
 
 t = time.time()
 
-x = rk4(duffing, tspan, x0, print_timestamp=True)
+x = rk2(duffing, tspan, x0, print_timestamp=True)
 
 elapsed = time.time() - t
 

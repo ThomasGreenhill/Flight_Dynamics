@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 import sys
 sys.path.append('../Utilities')
 from rk4 import rk4
+from rk2 import rk2
 sys.path.append('../AVL_Automation')
 from pyAvl_Cf_Cm import pyAvl_Cf_Cm
 sys.path.append("../Figure_Formatting")
@@ -28,7 +29,7 @@ colors = returnval[0]
 params = returnval[1]
 
 # Path to aircraft geometry file for AVL
-acftpath = '/Users/thomasgreenhill/SUAVE/ASW22BL/ASW_22_Demo/Geometry/ASW22BL_Wing_With_Tips_Tail_Surfaces_v1.4.avl'
+acftpath = '/Users/thomasgreenhill/Documents/GitHub/Flight_Dynamics/Flight_Dynamics/Aircraft/b737.avl'
 
 global rho, T, heng
 rho = 1.225
@@ -39,18 +40,18 @@ heng = 0
 global Ixx, Iyy, Izz, Ixz, cbar, S, bspan, g, m, X_cg
 
 def acft_props():
-    # Bogus properties for ASW-22 BL
-    Ixx = 1000000
-    Iyy = 2000000
-    Izz = 3000000
-    Ixz = 10
+    # Properties for B737 according to b737.mass
+    Ixx = 0.7067e6
+    Iyy = 0.2708e07
+    Izz = 0.3308e7
+    Ixz = -0.2699e5
 
-    cbar = 0.659
+    cbar = 3.9
     S = 17.36575
     bspan = 29.35
     g = 9.81
-    m = 850
-    X_cg = 0.3
+    m = 0.7715e5
+    X_cg = 18.2
 
     return Ixx, Iyy, Izz, Ixz, cbar, S, bspan, g, m, X_cg
 
@@ -61,25 +62,31 @@ def control(t):
     
     Control input vector is organized as follows:
         controlvec = np.array([
-            [de],
+            [ds]
+            [df],
             [da],
+            [de],
             [dr]
         ])
     
     Note: 
         AVL expects units in degrees
     '''
-    tstart = 5
-    tend = 20
+    tstart = 2
+    tend = 6
 
     if t > tstart and t < tend:
         controlvec = np.array([
-            [10],
+            [0],
+            [0],
+            [0],
             [0],
             [0]
         ])
     else:
         controlvec = np.array([
+            [0],
+            [0],
             [0],
             [0],
             [0]
@@ -174,9 +181,9 @@ def nonlin_eom(t, x):
 
     Phidot = p + np.tan(The)*(q*np.sin(Phi) + r*np.cos(Phi))
     Thedot = q*np.cos(Phi) - r*np.sin(Phi)
-    Psidot = (q*np.sin(Phi) + r*np.cos(Phi))/np.cos(Phi)
+    Psidot = (q*np.sin(Phi) + r*np.cos(Phi))/np.cos(The)
 
-    xEdot = u*np.cos(Phi)*np.cos(Phi) + v*(np.cos(Psi)*np.sin(The)*np.sin(Phi) - np.sin(Psi)*np.cos(Phi)) + w*(np.cos(Psi)*np.sin(The)*np.cos(Phi) + np.sin(Psi)*np.sin(Phi))
+    xEdot = u*np.cos(Psi)*np.cos(The) + v*(np.cos(Psi)*np.sin(The)*np.sin(Phi) - np.sin(Psi)*np.cos(Phi)) + w*(np.cos(Psi)*np.sin(The)*np.cos(Phi) + np.sin(Psi)*np.sin(Phi))
     yEdot = u*np.sin(Psi)*np.cos(The) + v*(np.sin(Psi)*np.sin(The)*np.sin(Phi) + np.cos(Psi)*np.cos(Phi)) + w*(np.sin(Psi)*np.sin(The)*np.cos(Phi) - np.cos(Psi)*np.sin(Phi))
     hdot = u*np.sin(The) - v*np.cos(The)*np.sin(Phi) - w*np.cos(The)*np.cos(Phi)
 
@@ -199,18 +206,32 @@ def nonlin_eom(t, x):
 
 
 # Initial conditions and time vector
-tspan = np.linspace(0,30,31)
+tspan = np.linspace(0,40,401)
+# tspan = np.linspace(0,1,1001)
 x0 = np.zeros((12,1))
-x0[0] = 42
-x0[1] = 4*np.pi/180
+x0[0] = 260 # m/s
+x0[1] = 2*np.pi/180
 
 # Solve using RK4
-x = rk4(nonlin_eom, tspan, x0, print_timestamp=True)
+x = rk2(nonlin_eom, tspan, x0, print_timestamp=True)
 
+# Recall the input vector
+u = np.zeros((len(tspan),5))
+for ii in range(0,len(tspan)-1):
+    u[[ii],:] = np.transpose(control(tspan[ii]))
+
+
+np.savetxt("states.csv", np.transpose(x), delimiter=",")
+np.savetxt("inputs.csv", u, delimiter=",")
 # Plotting
-labels = ["Total Velocity", "alpha", "beta", "Phi", "Theta", "Psi", "Pitch Rate", "Roll Rate", "Yaw Rate", "x-Earth Axis Location", "y-Earth Axis Location", "Altitude Above Earth"]
+labels = ["Total Velocity", "alpha", "beta", "Phi", "Theta", "Psi", "Roll Rate", "Pitch Rate", "Yaw Rate", "x-Earth Axis Location", "y-Earth Axis Location", "Altitude Above Earth"]
 
-plt.figure(figsize=(12, 12))
-plt.plot(tspan[:],np.transpose(x[:,:]), label=labels)
-plt.legend(loc='best')
+plt.figure(figsize=(20, 25))
+for ii in range(0,12):
+    plt.subplot(12,1,ii+1)
+    plt.plot(tspan[:],np.transpose(x[ii,:]), label=labels[ii])
+    plt.legend(loc='best')
+
 plt.show()
+
+
