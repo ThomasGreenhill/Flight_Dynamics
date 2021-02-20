@@ -17,14 +17,15 @@ x[2] = 3*np.pi/180
 print(x)
 
 # Path to aircraft geometry file for AVL
-# acftpath = '/Users/thomasgreenhill/SUAVE/ASW22BL/ASW_22_Demo/Geometry/ASW22BL_Wing_With_Tips_Tail_Surfaces_v1.4.avl'
-acftpath = '/Users/thomasgreenhill/Documents/AVL/C182RG/C182RG.avl'
+acftpath = '/Users/thomasgreenhill/SUAVE/ASW22BL/ASW_22_Demo/Geometry/ASW22BL_Wing_With_Tips_Tail_Surfaces_v1.4.avl'
 
 global rho, T, heng
 rho = 0.002377
 
 controlvec = np.array([
     [10],
+    [0],
+    [0],
     [0],
     [0]
 ])

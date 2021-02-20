@@ -63,10 +63,10 @@ if __name__ == '__main__':
     # Cases (multiple cases can be defined)
     cruise_case = Case(name='Cruise', alpha=4.0)  # Case defined by one angle-of-attack
 
-    # More elaborate case, angle-of-attack of 4deg, elevator parameter which sets Cm (pitching moment) to 0.0
-    cruise_trim_case = Case(name='Trimmed',
-                            alpha=4.0,
-                            elevator=Parameter(name='elevator', constraint='Cm', value=0.0))
+    # # More elaborate case, angle-of-attack of 4deg, elevator parameter which sets Cm (pitching moment) to 0.0
+    # cruise_trim_case = Case(name='Trimmed',
+    #                         alpha=4.0,
+    #                         elevator=Parameter(name='elevator', constraint='Cm', value=0.0))
 
     # Landing case; flaps down by 15deg
     landing_case = Case(name='Landing', alpha=7.0, flap=15.0)
