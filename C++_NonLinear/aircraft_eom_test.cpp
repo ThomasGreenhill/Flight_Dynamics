@@ -7,16 +7,16 @@
  */
 
 #include "../Utilities/rk4.cpp"
-#include "../Utilities/utils.cpp"
 #include "../Figure_Formatting/plotting_utils.cpp"
 #include "aircraft_eom.cpp"
 
 int main()
 {
+    auto t_start = std::chrono::high_resolution_clock::now();
     // Jiffy Jerboa in hover
-    std::vector<double> tspan = utils::linspace(0, 30, 3001);
-    std::vector<double> x0 = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-    
+    std::vector<double> tspan = utils::linspace(0, 15, 51);
+    std::vector<double> x0 = {0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+
     std::vector<double> x;
     x = rk4(JJ_hover_nc, tspan, x0);
 
@@ -41,12 +41,22 @@ int main()
         zE[ii] = x[ii * 12 + 11];
     }
 
-    int counter = 1;
-    plt_utils::formatfigures();
-    counter = plt_utils::plotls(tspan, Phi, "", 1);
-    plt::figure();
-    counter = plt_utils::plotls(tspan, The, "", 1);
-    plt::show();
+    auto t_stop = std::chrono::high_resolution_clock::now();
+    utils::print_exectime(t_start, t_stop);
+
+    // int counter = 1;
+    // plt_utils::formatfigures();
+    // counter = plt_utils::plotls(tspan, The, "", 1);
+
+    // plt::figure();
+    // counter = plt_utils::plotls(tspan, xE, "", 1);
+
+    // plt::figure();
+    // counter = 1;
+    // counter = plt_utils::plotls(tspan, yE, "", counter);
+    // counter = plt_utils::plotls(tspan, zE, "", counter);
+
+    // plt::show();
 
     return 0;
 }

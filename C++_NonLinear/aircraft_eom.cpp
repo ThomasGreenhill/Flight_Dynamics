@@ -38,8 +38,20 @@ std::vector<double> JJ_hover_nc(double t, std::vector<double> x)
      *          04.05.2021 Created, TVG
      */
 {
-    std::vector<double> ctrl = utils::timesones(8,0.5);
-
+    std::vector<double> ctrl;
+    if (t < 2)
+    {
+        ctrl = utils::timesones(8, 0.755814);
+        // ctrl[0] = 1;
+        // ctrl[7] = 1;
+    }
+    else
+    {
+        ctrl = utils::timesones(8, 0.755814);
+        ctrl[0] = 1.2;
+        ctrl[7] = 1.2;
+        // ctrl = utils::timesones(8, 0.755814);
+    }
 
     std::vector<double> xdot = JJ_hover_dynamics(x, ctrl);
 
@@ -63,6 +75,13 @@ std::vector<double> JJ_hover_dynamics(std::vector<double> x, std::vector<double>
 {
     // atmospheric and enviromental properties:
     double qbar = 0.5 * 1.225 * pow(x[0], 2);
+
+    if (qbar == 0)
+    {
+        std::cout << "qbar == 0, adjusting it to 0.01" << std::endl;
+        qbar = 0.01;
+    }
+
     double qbarx = 0.5 * 1.225 * pow(x[0] * cos(x[1]) * cos(x[2]), 2);
     double qbary = 0.5 * 1.225 * pow(x[0] * sin(x[2]), 2);
     double qbarz = 0.5 * 1.225 * pow(x[0] * sin(x[1]) * cos(x[2]), 2);
@@ -70,6 +89,7 @@ std::vector<double> JJ_hover_dynamics(std::vector<double> x, std::vector<double>
 
     // geometric and inertial properties of aircraft
     double S = 16;
+    double bspan = 12.65;
     double cbar = 1.2697;
     double m = 13000 / g; // kg
     // CG based on CG_locator.py
@@ -101,27 +121,27 @@ std::vector<double> JJ_hover_dynamics(std::vector<double> x, std::vector<double>
     double Tmax = 155;  // N.m
 
     // x-body axis force is only due to drag (CDmin assumed due to no wing lift induced drag)
-    double CDx = 0.01991;
-    double Cx = (-qbarx * S * CDx / m) / (qbar * S);
+    double CDx = 0; // 0.01991
+    double Cx = (-std::abs(qbarx * S * CDx / m)) / (qbar * S);
 
     // y-body axis force is only due to drag
-    double CDy = 0.4; // Approximation for now, use FS or something later to get a better approx
-    double Cy = (-qbary * S * CDy / m) / (qbar * S);
+    double CDy = 0; // 0.4 Approximation for now, use FS or something later to get a better approx
+    double Cy = (-std::abs(qbary * S * CDy / m)) / (qbar * S);
 
     // z-body axis force is just the sum of the motor thrusts minus the drag with V_inf in the -z direction
-    double CDz = 0.7; // Approximation for now, use FS or something later to get a better approx
-    double Cz = ((d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8) * Fmax - qbarz * S * CDz) / (qbar * S);
+    double CDz = 0; // 0.7 Approximation for now, use FS or something later to get a better approx
+    double Cz = - ((d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8) * Fmax - std::abs(qbarz * S * CDz)) / (qbar * S);
 
     // In moment calculations drag forces are assumed to act through CG and that y_cg = 0 (no offset from CG)
     double L = d1_xyz[1] * d1 * Fmax + d2_xyz[1] * d2 * Fmax + d3_xyz[1] * d3 * Fmax + d4_xyz[1] * d4 * Fmax + d5_xyz[1] * d5 * Fmax + d6_xyz[1] * d6 * Fmax + d7_xyz[1] * d7 * Fmax + d8_xyz[1] * d8 * Fmax;
-    double Cl = std::move(L) / (qbar * S * cbar);
+    double Cl = std::move(L) / (qbar * S * bspan);
 
     double M = (d1_xyz[0] - CG_xyz[0]) * d1 * Fmax + (d2_xyz[0] - CG_xyz[0]) * d2 * Fmax + (d3_xyz[0] - CG_xyz[0]) * d3 * Fmax + (d4_xyz[0] - CG_xyz[0]) * d4 * Fmax + (d5_xyz[0] - CG_xyz[0]) * d5 * Fmax + (d6_xyz[0] - CG_xyz[0]) * d6 * Fmax + (d7_xyz[0] - CG_xyz[0]) * d7 * Fmax + (d8_xyz[0] - CG_xyz[0]) * d8 * Fmax;
     double Cm = std::move(M) / (qbar * S * cbar);
 
     // Assumed linear relationship between torque and thrust, BAD ASSUMPTION
     double N = -d1 * Tmax + d2 * Tmax - d3 * Tmax + d4 * Tmax - d5 * Tmax + d6 * Tmax - d7 * Tmax + d8 * Tmax;
-    double Cn = std::move(N) / (qbar * S * cbar);
+    double Cn = std::move(N) / (qbar * S * bspan);
 
     xdot = eom_6DOFnonlin(x, Cx, Cy, Cz, Cl, Cm, Cn);
 
@@ -156,9 +176,6 @@ std::vector<double> eom_6DOFnonlin(std::vector<double> x, double Cx, double Cy, 
     double Izz = 3974;    // kg.m^2
     double Ixz = 1;       // Assumed (not yet calculated)
 
-    // CG based on CG_locator.py
-    std::vector<double> CG_xyz = {-3.5544829, 0, 0};
-
     // Unpack the state input vector
     double Vt = x[0];
     double alp = x[1];
@@ -184,6 +201,7 @@ std::vector<double> eom_6DOFnonlin(std::vector<double> x, double Cx, double Cy, 
     double udot = r * v - q * w - g * sin(The) + qbar * S * Cx / m;
     double vdot = p * w - r * u + g * cos(The) * sin(Phi) + qbar * S * Cy / m;
     double wdot = q * u - p * v + g * cos(The) * cos(Phi) + qbar * S * Cz / m;
+    std::cout << wdot << std::endl;
 
     // Total velocity and wind angles
     double Vtdot = (u * udot + v * vdot + w * wdot) / Vt;
