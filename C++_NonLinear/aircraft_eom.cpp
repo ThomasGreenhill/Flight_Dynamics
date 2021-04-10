@@ -39,7 +39,7 @@ std::vector<double> JJ_hover_nc(double t, std::vector<double> x)
      */
 {
     std::vector<double> ctrl;
-    if (t < 2)
+    if (t < 25)
     {
         ctrl = utils::timesones(8, 0.755814);
         // ctrl[0] = 1;
@@ -47,9 +47,10 @@ std::vector<double> JJ_hover_nc(double t, std::vector<double> x)
     }
     else
     {
-        ctrl = utils::timesones(8, 0.755814);
-        ctrl[0] = 1.2;
-        ctrl[7] = 1.2;
+        ctrl = utils::timesones(8, -2);
+        // ctrl = utils::timesones(8, 0.755814);
+        // ctrl[0] = 1.2;
+        // ctrl[7] = 1.2;
         // ctrl = utils::timesones(8, 0.755814);
     }
 
@@ -75,12 +76,6 @@ std::vector<double> JJ_hover_dynamics(std::vector<double> x, std::vector<double>
 {
     // atmospheric and enviromental properties:
     double qbar = 0.5 * 1.225 * pow(x[0], 2);
-
-    if (qbar == 0)
-    {
-        std::cout << "qbar == 0, adjusting it to 0.01" << std::endl;
-        qbar = 0.01;
-    }
 
     double qbarx = 0.5 * 1.225 * pow(x[0] * cos(x[1]) * cos(x[2]), 2);
     double qbary = 0.5 * 1.225 * pow(x[0] * sin(x[2]), 2);
@@ -122,33 +117,30 @@ std::vector<double> JJ_hover_dynamics(std::vector<double> x, std::vector<double>
 
     // x-body axis force is only due to drag (CDmin assumed due to no wing lift induced drag)
     double CDx = 0; // 0.01991
-    double Cx = (-std::abs(qbarx * S * CDx / m)) / (qbar * S);
+    double Fx = -std::abs(qbarx * S * CDx / m);
 
     // y-body axis force is only due to drag
     double CDy = 0; // 0.4 Approximation for now, use FS or something later to get a better approx
-    double Cy = (-std::abs(qbary * S * CDy / m)) / (qbar * S);
+    double Fy = -std::abs(qbary * S * CDy / m);
 
     // z-body axis force is just the sum of the motor thrusts minus the drag with V_inf in the -z direction
     double CDz = 0; // 0.7 Approximation for now, use FS or something later to get a better approx
-    double Cz = - ((d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8) * Fmax - std::abs(qbarz * S * CDz)) / (qbar * S);
+    double Fz = -(d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8) * Fmax - std::abs(qbarz * S * CDz);
 
     // In moment calculations drag forces are assumed to act through CG and that y_cg = 0 (no offset from CG)
-    double L = d1_xyz[1] * d1 * Fmax + d2_xyz[1] * d2 * Fmax + d3_xyz[1] * d3 * Fmax + d4_xyz[1] * d4 * Fmax + d5_xyz[1] * d5 * Fmax + d6_xyz[1] * d6 * Fmax + d7_xyz[1] * d7 * Fmax + d8_xyz[1] * d8 * Fmax;
-    double Cl = std::move(L) / (qbar * S * bspan);
+    double L = -(d1_xyz[1] * d1 * Fmax + d2_xyz[1] * d2 * Fmax + d3_xyz[1] * d3 * Fmax + d4_xyz[1] * d4 * Fmax + d5_xyz[1] * d5 * Fmax + d6_xyz[1] * d6 * Fmax + d7_xyz[1] * d7 * Fmax + d8_xyz[1] * d8 * Fmax);
 
     double M = (d1_xyz[0] - CG_xyz[0]) * d1 * Fmax + (d2_xyz[0] - CG_xyz[0]) * d2 * Fmax + (d3_xyz[0] - CG_xyz[0]) * d3 * Fmax + (d4_xyz[0] - CG_xyz[0]) * d4 * Fmax + (d5_xyz[0] - CG_xyz[0]) * d5 * Fmax + (d6_xyz[0] - CG_xyz[0]) * d6 * Fmax + (d7_xyz[0] - CG_xyz[0]) * d7 * Fmax + (d8_xyz[0] - CG_xyz[0]) * d8 * Fmax;
-    double Cm = std::move(M) / (qbar * S * cbar);
 
     // Assumed linear relationship between torque and thrust, BAD ASSUMPTION
     double N = -d1 * Tmax + d2 * Tmax - d3 * Tmax + d4 * Tmax - d5 * Tmax + d6 * Tmax - d7 * Tmax + d8 * Tmax;
-    double Cn = std::move(N) / (qbar * S * bspan);
 
-    xdot = eom_6DOFnonlin(x, Cx, Cy, Cz, Cl, Cm, Cn);
+    xdot = eom_6DOFnonlin(x, Fx, Fy, Fz, L, M, N);
 
     return xdot;
 }
 
-std::vector<double> eom_6DOFnonlin(std::vector<double> x, double Cx, double Cy, double Cz, double Cl, double Cm, double Cn)
+std::vector<double> eom_6DOFnonlin(std::vector<double> x, double Fx, double Fy, double Fz, double Ml, double Mm, double Mn)
 /* eom_6DOFnonlin
      *      General 6DOF eom based on current state vetor and applied forces and moments 
      *      States vector is organized as follows:
@@ -198,10 +190,10 @@ std::vector<double> eom_6DOFnonlin(std::vector<double> x, double Cx, double Cy, 
     double w = Vt * sin(alp) * cos(bet);
 
     // Body-axis accelerations
-    double udot = r * v - q * w - g * sin(The) + qbar * S * Cx / m;
-    double vdot = p * w - r * u + g * cos(The) * sin(Phi) + qbar * S * Cy / m;
-    double wdot = q * u - p * v + g * cos(The) * cos(Phi) + qbar * S * Cz / m;
-    std::cout << wdot << std::endl;
+    double udot = r * v - q * w - g * sin(The) + Fx / m;
+    double vdot = p * w - r * u + g * cos(The) * sin(Phi) + Fy / m;
+    double wdot = q * u - p * v + g * cos(The) * cos(Phi) + Fz / m;
+    std::cout << g * cos(The) * cos(Phi) + Fz / m << std::endl;
 
     // Total velocity and wind angles
     double Vtdot = (u * udot + v * vdot + w * wdot) / Vt;
@@ -220,9 +212,9 @@ std::vector<double> eom_6DOFnonlin(std::vector<double> x, double Cx, double Cy, 
     double c9 = Ixx / (Ixx * Izz - pow(Ixz, 2));
 
     // Angular accelerations (angular momentum of rotating masses are ignored)
-    double pdot = (c1 * r + c2 * p) * q + qbar * S * bspan * (c3 * Cl + c4 * Cn);
-    double qdot = (c5 * p) * r - c6 * (pow(p, 2) - pow(r, 2)) + qbar * S * cbar * c7 * Cm;
-    double rdot = (c8 * p - c2 * r) * q + qbar * S * bspan * (c4 * Cl + c9 * Cn);
+    double pdot = (c1 * r + c2 * p) * q + c3 * Ml + c4 * Mn;
+    double qdot = (c5 * p) * r - c6 * (pow(p, 2) - pow(r, 2)) + c7 * Mm;
+    double rdot = (c8 * p - c2 * r) * q + c4 * Ml + c9 * Mn;
 
     // Navigation equations
     double Phidot = p + tan(The) * (q * sin(Phi) + r * cos(Phi));
@@ -231,7 +223,7 @@ std::vector<double> eom_6DOFnonlin(std::vector<double> x, double Cx, double Cy, 
 
     double xEdot = u * cos(Psi) * cos(The) + v * (cos(Psi) * sin(The) * sin(Phi) - sin(Psi) * cos(Phi)) + w * (cos(Psi) * sin(The) * cos(Phi) + sin(Psi) * sin(Phi));
     double yEdot = u * sin(Psi) * cos(The) + v * (sin(Psi) * sin(The) * sin(Phi) + cos(Psi) * cos(Phi)) + w * (sin(Psi) * sin(The) * cos(Phi) - cos(Psi) * sin(Phi));
-    double zEdot = u * sin(The) - v * cos(The) * sin(Phi) - w * cos(The) * cos(Phi);
+    double hEdot = u * sin(The) - v * cos(The) * sin(Phi) - w * cos(The) * cos(Phi);
 
     xdot[0] = std::move(Vtdot);
     xdot[1] = std::move(alpdot);
@@ -244,7 +236,7 @@ std::vector<double> eom_6DOFnonlin(std::vector<double> x, double Cx, double Cy, 
     xdot[8] = std::move(rdot);
     xdot[9] = std::move(xEdot);
     xdot[10] = std::move(yEdot);
-    xdot[11] = std::move(zEdot);
+    xdot[11] = std::move(hEdot);
 
     return (xdot);
 }
