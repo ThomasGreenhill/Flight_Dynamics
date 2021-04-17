@@ -35,6 +35,17 @@ d6_xyz = [-4.903, -3.770, -0.590].';
 d7_xyz = [-4.959, -5.915, -0.590].';
 d8_xyz = [-0.8, -1.3, 0].';
 
+d_xyz = [d1_xyz, d2_xyz, d3_xyz, d4_xyz, d5_xyz, d6_xyz, d7_xyz, d8_xyz];
+
+CG_xyz = zeros(3,1);
+
+if CG_xyz == false % set the CG to be on the Center of Lift
+    CG_xyz(1) = mean(d_xyz(1,:));
+    CG_xyz(2) = mean(d_xyz(2,:));
+    CG_xyz(3) = mean(d_xyz(3,:));
+end
+
+
 E = [1, 0, 0, 0, 0, 0, 0, 0; ...
     0, 1, 0, 0, 0, 0, 0, 0; ...
     0, 0, 1, 0, 0, 0, 0, 0; ...

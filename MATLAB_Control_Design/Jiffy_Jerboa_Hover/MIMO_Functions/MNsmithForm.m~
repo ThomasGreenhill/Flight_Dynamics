@@ -55,6 +55,7 @@ for i = 1:n;
         cfs(j) = coeffs(minors{i}(j),s);
         norminors{i}(j) = minors{i}(j)/cfs(j);
     end
+    cfs;
     D(i) = gcd(norminors{i});
     if i == 1
         invFact(i) = D(i)/D0;

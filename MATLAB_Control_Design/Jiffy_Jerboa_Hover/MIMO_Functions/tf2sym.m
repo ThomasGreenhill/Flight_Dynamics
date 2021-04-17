@@ -1,34 +1,34 @@
 function g = tf2sym(G)
-%{
-TF2SYM Numerical Transfer Function to Symbolic Transfer Function**.
-conversion.
+%
+% TF2SYM Numerical Transfer Function to Symbolic Transfer Function**.
+% conversion.
+% 
+% Syntax:  g = tf2sym(G)
+% 
+% Inputs:
+%    G - Numerical Transfer Function
+% 
+% Outputs:
+%    g - Symbolic Transfer Function
+% 
+% Revision History:
+%    06.09.2020: Created and Debugged, TVG
+% 
+% Credit:
+%    This program is based off Oskar Vivero Osornio's work but updated and
+%    improved for R2020a
+% 
+% Example: 
+%    g11=tf([1 2],[1 2 1]);
+%    g12=tf([1 -1],[1 5 6]);
+%    g21=tf([1 -1],[1 3 2]);
+%    g22=tf([1 2],[1 1]);
+%    G=[g11 g12; g21 g22];
+%    g=tf2sym(G);
+%    pretty(g)
+%
 
-Syntax:  g = tf2sym(G)
-
-Inputs:
-   G - Numerical Transfer Function
-
-Outputs:
-   g - Symbolic Transfer Function
-
-Revision History:
-   06.09.2020: Created and Debugged, TVG
-
-Credit:
-   This program is based off Oskar Vivero Osornio's work but updated and
-   improved for R2020a
-
-Example: 
-   g11=tf([1 2],[1 2 1]);
-   g12=tf([1 -1],[1 5 6]);
-   g21=tf([1 -1],[1 3 2]);
-   g22=tf([1 2],[1 1]);
-   G=[g11 g12; g21 g22];
-   g=tf2sym(G);
-   pretty(g)
-%}
-
-p=sym('x');
+p=sym('s');
 [n,m]=size(G);
 g=zeros(n,m);
 g=sym(g);

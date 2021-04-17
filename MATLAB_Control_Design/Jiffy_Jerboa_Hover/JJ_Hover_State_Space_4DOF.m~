@@ -10,6 +10,9 @@
 
 function [A, B, C, D, E] = JJ_Hover_State_Space_4DOF(CG_xyz, m, Ixx, Iyy, Izz, Ixz, The0, U0, V0, W0)
 
+% Assume zero steady-state roll angles
+Phi0 = 0;
+
 if isa(m, 'sym')
     symflag = true;
 else
@@ -31,6 +34,15 @@ d5_xyz = [-4.848, -1.620, -0.590].';
 d6_xyz = [-4.903, -3.770, -0.590].';
 d7_xyz = [-4.959, -5.915, -0.590].';
 d8_xyz = [-0.8, -1.3, 0].';
+
+d_xyz = [d1_xyz, d2_xyz, d3_xyz, d4_xyz, d5_xyz, d6_xyz, d7_xyz, d8_xyz];
+
+CG
+
+if CG_xyz == false % set the CG to be on the Center of Lift
+    CG_xyz
+end
+
 
 E = [1, 0, 0, 0, 0, 0, 0, 0; ...
     0, 1, 0, 0, 0, 0, 0, 0; ...
@@ -59,7 +71,7 @@ end
 B(2, :) = -Tmax / m * ones(1, 8);
 B(4, :) = Tmax / Ixx * [(CG_xyz(2) - d1_xyz(2)), (CG_xyz(2) - d2_xyz(2)), (CG_xyz(2) - d3_xyz(2)), (CG_xyz(2) - d4_xyz(2)), (CG_xyz(2) - d5_xyz(2)), (CG_xyz(2) - d6_xyz(2)), (CG_xyz(2) - d7_xyz(2)), (CG_xyz(2) - d8_xyz(2))];
 B(6, :) = Tmax / Iyy * [(d1_xyz(1) - CG_xyz(1)), (d2_xyz(1) - CG_xyz(1)), (d3_xyz(1) - CG_xyz(1)), (d4_xyz(1) - CG_xyz(1)), (d5_xyz(1) - CG_xyz(1)), (d6_xyz(1) - CG_xyz(1)), (d7_xyz(1) - CG_xyz(1)), (d8_xyz(1) - CG_xyz(1))];
-B(8, :) = [-Qmax, Qmax, -Qmax, Qmax, -Qmax, Qmax, -Qmax, Qmax];
+B(8, :) = 1 / Izz * [-Qmax, Qmax, -Qmax, Qmax, -Qmax, Qmax, -Qmax, Qmax];
 
 % Note that accelerations (last three rows of C and D)
 % are left out as to avoid dealing with H*xdot which affects accelerations

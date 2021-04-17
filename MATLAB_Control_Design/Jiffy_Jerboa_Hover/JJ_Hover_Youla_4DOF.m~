@@ -78,7 +78,7 @@ T11(s) = K/K11*((Tz1*s+1)*(Tz2*s+1))/((s^2+2*zet*wn*s+wn^2)*(Tp1*s+1)*(Tp2*s+1))
 fprintf("T11(s=0) = %f", subs(T11, s, 0))
 Tp1 = double(solve(simplify(subs(diff(T11, s), s, 0)) == 0, Tp1))
 
-T11 = K / K11 * ((Tz1 * s + 1) * (Tz2 * s + 1)) / ((s^2 + 2 * zet * wn * s + wn^2) * (Tp1 * s + 1) * (Tp2 * s + 1)* (Tp3 * s + 1)^2);
+T11 = K / K11 * ((Tz1 * s + 1) * (Tz2 * s + 1)) / ((s^2 + 2 * zet * wn * s + wn^2) * (Tp1 * s + 1) * (Tp2 * s + 1)* (Tp2 * s + 1)^);
 % T11 = K / K11 * 1 / (s * (s^2 + 2 * zet * wn * s + wn^2));
 
 T22 = T11;
@@ -136,7 +136,7 @@ lsim(Ty_tf(4, 1), u, t)
 
 
 grid on
-legend('Response of z(t)', 'Response of p(t)', 'Response of q(t)', 'Response of r(t)')
+legend('Response of d_1', 'Response of d_2', 'Response of d_3', 'Response of d_4', 'Response of d_5', 'Response of d_6', 'Response of d_7', 'Response of d_8')
 title('Sensor Response z(t), p(t), q(t) and r(t) to Step Input at z(t))', 'FontSize', 18);
 
 set(findall(gcf, 'type', 'line'), 'linewidth', 2);
@@ -181,7 +181,7 @@ lsim(Ty_tf(4, 4), u, t)
 
 
 grid on
-legend('Response of z(t)', 'Response of p(t)', 'Response of q(t)', 'Response of r(t)')
+legend('Response of d_1', 'Response of d_2', 'Response of d_3', 'Response of d_4', 'Response of d_5', 'Response of d_6', 'Response of d_7', 'Response of d_8')
 title('Sensor Response z(t), p(t), q(t) and r(t) to Step Input at r(t))', 'FontSize', 18);
 
 set(findall(gcf, 'type', 'line'), 'linewidth', 2);
