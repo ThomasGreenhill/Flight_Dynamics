@@ -56,7 +56,17 @@ d = 1 / simplify(det(SI - A));
 Gp_sym = p .* d;
 TFM_tf = minreal(zpk(sym2tf(Gp_sym)));
 
-[UL, Mp, UR] = MNsmithmcmillanForm(A, vpa(B, 4), CT.', D);
+% Control allocation
+% Leave offset vector zero for now
+% c = zeros(8,1);
+Gps = pinv(Gp_sym);
+Gpdes = diag([1/s, 1/s, 1/s, 1/s]);
+Ctrlalloc_sym = double(Gps*Gpdes);
+p_alloc = p*Ctrlalloc_sym;
+
+Gp_sym = Gp_sym*Ctrlalloc_sym;
+
+[UL, Mp, UR] = MNsmithmcmillanForm(p_alloc, d);
 
 %% Come up with a controller using Youla Parametrization
 
@@ -64,28 +74,30 @@ K11 = Mp(1, 1) * s^2;
 
 wn = 3.75;
 K = wn^2 * K11;
-zet = sqrt(2);
+zet = 0.779703;
 Tz1 = 2;
-Tz2 = 3.5;
-Tp2 = 1;
-Tp3 = 1;
+Tz2 = 2;
+Tp2 = 2;
+% Tp3 = 1;
 
 syms T11(s) Tp1
-T11(s) = K/K11*((Tz1*s+1)*(Tz2*s+1))/((s^2+2*zet*wn*s+wn^2)*(Tp1*s+1)*(Tp2*s+1));
+T11(s) = K/K11*((Tz1*s+1))/((s^2+2*zet*wn*s+wn^2)*(Tp1*s+1));
 % T11(s) = K / K11 * (Tz1*s+1) / ((s^2 + 2 * zet * wn * s + wn^2));
 
 % Check interpolation conditions:
-fprintf("T11(s=0) = %f", subs(T11, s, 0))
-Tp1 = double(solve(simplify(subs(diff(T11, s), s, 0)) == 0, Tp1))
+fprintf("T11(s=0) = %f \n", subs(T11, s, 0))
+Tp1 = double(solve(simplify(subs(diff(T11, s), s, 0)) == 0, Tp1));
+Tp1
 
-T11 = K / K11 * ((Tz1 * s + 1) * (Tz2 * s + 1)) / ((s^2 + 2 * zet * wn * s + wn^2) * (Tp1 * s + 1) * (Tp2 * s + 1)* (Tp2 * s + 1)^);
+T11 = K/K11*((Tz1*s+1))/((s^2+2*zet*wn*s+wn^2)*(Tp1*s+1));
+zpk(sym2tf(T11))
 % T11 = K / K11 * 1 / (s * (s^2 + 2 * zet * wn * s + wn^2));
 
 T22 = T11;
 T33 = T11;
 T44 = T11;
 
-MY = sym(zeros(8, 4));
+MY = sym(zeros(4));
 MY(1, 1) = T11 / Mp(1, 1);
 MY(2, 2) = T22 / Mp(2, 2);
 MY(3, 3) = T33 / Mp(3, 3);
@@ -94,6 +106,8 @@ MY(4, 4) = T44 / Mp(4, 4);
 Youla = UR * MY * UL;
 
 Youla_tf = minreal(sym2tf(Youla));
+
+Youlaalloc_tf = Ctrlalloc_sym*Youla_tf;
 
 Gc_sym = simplify(Youla*(eye(size(Gp_sym * Youla)) - Gp_sym * Youla)^-1);
 Gc_tf = zpk(sym2tf(Gc_sym));
@@ -128,7 +142,7 @@ t = 0:0.01:10;
 figure('Position', [0, 0, 800, 800])
 hold on
 u = zeros(size(t));
-u(t > 0.5) = -10 * ones();
+u(t > 0.5) = -9.81*t(t > 0.5); % Hover 
 lsim(Ty_tf(1, 1), u, t)
 lsim(Ty_tf(2, 1), u, t)
 lsim(Ty_tf(3, 1), u, t)
@@ -136,35 +150,35 @@ lsim(Ty_tf(4, 1), u, t)
 
 
 grid on
-legend('Response of d_1', 'Response of d_2', 'Response of d_3', 'Response of d_4', 'Response of d_5', 'Response of d_6', 'Response of d_7', 'Response of d_8')
-title('Sensor Response z(t), p(t), q(t) and r(t) to Step Input at z(t))', 'FontSize', 18);
+legend('Response of w(t)', 'Response of p(t)', 'Response of q(t)', 'Response of r(t)')
+title('Sensor Response w(t), p(t), q(t) and r(t) to Step Input at w(t))', 'FontSize', 18);
 
 set(findall(gcf, 'type', 'line'), 'linewidth', 2);
 set(findall(gcf, 'type', 'axes'), 'fontsize', 14);
 set(findall(gcf, 'type', 'legend'), 'fontsize', 14);
+ylim([-2,2])
 saveas(gcf, "./Figures/zstep_sensor_resp.jpg")
 
 %% Actuator Response to First Reference Input (Altitude Step)
 figure('Position', [0, 0, 800, 800])
 hold on
-u = zeros(size(t));
-u(t > 0.5) = -ones();
-lsim(Youla_tf(1, 1), u, t)
-lsim(Youla_tf(2, 1), u, t)
-lsim(Youla_tf(3, 1), u, t)
-lsim(Youla_tf(4, 1), u, t)
-lsim(Youla_tf(5, 1), u, t)
-lsim(Youla_tf(6, 1), u, t)
-lsim(Youla_tf(7, 1), u, t)
-lsim(Youla_tf(8, 1), u, t)
+lsim(Youlaalloc_tf(1, 1), u, t)
+lsim(Youlaalloc_tf(2, 1), u, t)
+lsim(Youlaalloc_tf(3, 1), u, t)
+lsim(Youlaalloc_tf(4, 1), u, t)
+lsim(Youlaalloc_tf(5, 1), u, t)
+lsim(Youlaalloc_tf(6, 1), u, t)
+lsim(Youlaalloc_tf(7, 1), u, t)
+lsim(Youlaalloc_tf(8, 1), u, t)
 
 grid on
 legend('Response of d_1', 'Response of d_2', 'Response of d_3', 'Response of d_4', 'Response of d_5', 'Response of d_6', 'Response of d_7', 'Response of d_8')
-title('Actuator Response z(t), p(t), q(t) and r(t) to Step Input at z(t))', 'FontSize', 18);
+title('Actuator Response w(t), p(t), q(t) and r(t) to Step Input at w(t))', 'FontSize', 18);
 
 set(findall(gcf, 'type', 'line'), 'linewidth', 2);
 set(findall(gcf, 'type', 'axes'), 'fontsize', 14);
 set(findall(gcf, 'type', 'legend'), 'fontsize', 14);
+ylim([-2,2])
 saveas(gcf, "./Figures/zstep_sensor_resp.jpg")
 
 %% Output Step Responses to First Reference Input (Yaw Step)
@@ -172,42 +186,46 @@ t = 0:0.01:10;
 
 figure('Position', [0, 0, 800, 800])
 hold on
-u = zeros(size(t));
-u(t > 0.5) = ones();
-lsim(Ty_tf(1, 4), u, t)
-lsim(Ty_tf(2, 4), u, t)
-lsim(Ty_tf(3, 4), u, t)
-lsim(Ty_tf(4, 4), u, t)
+u = zeros(length(t),2);
+u(:,1) = -9.81*t; % Hover 
+u(t > 4,2) = -(360/60)*pi/180; % 60 seconds for full yaw rotation
+ind = [1,4];
+
+lsim(Ty_tf(1, ind), u, t)
+lsim(Ty_tf(2, ind), u, t)
+lsim(Ty_tf(3, ind), u, t)
+lsim(Ty_tf(4, ind), u, t)
+
 
 
 grid on
-legend('Response of d_1', 'Response of d_2', 'Response of d_3', 'Response of d_4', 'Response of d_5', 'Response of d_6', 'Response of d_7', 'Response of d_8')
-title('Sensor Response z(t), p(t), q(t) and r(t) to Step Input at r(t))', 'FontSize', 18);
+legend('Response of w(t)', 'Response of p(t)', 'Response of q(t)', 'Response of r(t)')
+title('Sensor Response w(t), p(t), q(t) and r(t) to Step Input at r(t))', 'FontSize', 18);
 
 set(findall(gcf, 'type', 'line'), 'linewidth', 2);
 set(findall(gcf, 'type', 'axes'), 'fontsize', 14);
 set(findall(gcf, 'type', 'legend'), 'fontsize', 14);
+ylim([-2,2])
 saveas(gcf, "./Figures/rstep_sensor_resp.jpg")
 
-%% Actuator Response to First Reference Input (Altitude Step)
+%% Actuator Response to Yaw Step
 figure('Position', [0, 0, 800, 800])
 hold on
-u = zeros(size(t));
-u(t > 0.5) = -ones();
-lsim(Youla_tf(1, 4), u, t)
-lsim(Youla_tf(2, 4), u, t)
-lsim(Youla_tf(3, 4), u, t)
-lsim(Youla_tf(4, 4), u, t)
-lsim(Youla_tf(5, 4), u, t)
-lsim(Youla_tf(6, 4), u, t)
-lsim(Youla_tf(7, 4), u, t)
-lsim(Youla_tf(8, 4), u, t)
+lsim(Youlaalloc_tf(1, ind), u, t)
+lsim(Youlaalloc_tf(2, ind), u, t)
+lsim(Youlaalloc_tf(3, ind), u, t)
+lsim(Youlaalloc_tf(4, ind), u, t)
+lsim(Youlaalloc_tf(5, ind), u, t)
+lsim(Youlaalloc_tf(6, ind), u, t)
+lsim(Youlaalloc_tf(7, ind), u, t)
+lsim(Youlaalloc_tf(8, ind), u, t)
 
 grid on
 legend('Response of d_1', 'Response of d_2', 'Response of d_3', 'Response of d_4', 'Response of d_5', 'Response of d_6', 'Response of d_7', 'Response of d_8')
-title('Actuator Response z(t), p(t), q(t) and r(t) to Step Input at r(t))', 'FontSize', 18);
+title('Actuator Response w(t), p(t), q(t) and r(t) to Step Input at r(t))', 'FontSize', 18);
 
 set(findall(gcf, 'type', 'line'), 'linewidth', 2);
 set(findall(gcf, 'type', 'axes'), 'fontsize', 14);
 set(findall(gcf, 'type', 'legend'), 'fontsize', 14);
+ylim([-2,2])
 saveas(gcf, "./Figures/rstep_sensor_resp.jpg")
